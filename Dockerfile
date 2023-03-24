@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.23.0-focal
+FROM mcr.microsoft.com/playwright/python:v1.32.0-focal
 
 RUN apt update
 RUN apt install ffmpeg libsm6 libxext6  -y
