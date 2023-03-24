@@ -19,6 +19,8 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 
 RUN pip install selenium
+RUN pip install playwright
+RUN playwright install
 
 COPY . .
 
