@@ -1,4 +1,5 @@
 import os
+import asyncio
 from playwright.sync_api import Playwright, sync_playwright
 
 async def download_and_upload_video(page, video_index):
