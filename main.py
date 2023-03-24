@@ -1,51 +1,53 @@
 import os
-import time
 from playwright.sync_api import Playwright, sync_playwright
 
-async def main(playwright: Playwright):
-    browser = await playwright.chromium.launch(headless=True)
-    page = await browser.new_page()
+async def download_video():
+    async with sync_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        await page.goto("https://www.youtube.com/")
+        await page.click("#search")
+        await page.type("#search", "daily one video")
+        await page.press("#search", "Enter")
+        await page.click("#contents #thumbnail")
+        await page.click("#meta-contents #subscribe-button")
+        await page.click("#meta-contents #menu-container #top-level-buttons #button")
+        await page.click("#items #items #label")
+        await page.click("#items #items #button")
+        await page.wait_for_selector("#dialog #confirm-button")
+        await page.click("#dialog #confirm-button")
+        await page.wait_for_selector("#progress #progress-text")
 
-    # Navigate to YouTube
-    await page.goto('https://www.youtube.com')
+        # Rename downloaded file as final.mp4
+        downloaded_file = os.path.expanduser("~/Downloads/video.mp4")
+        final_file = os.path.expanduser("~/Downloads/final.mp4")
+        os.rename(downloaded_file, final_file)
 
-    # Wait for the latest video to load
-    await page.wait_for_selector('#thumbnail')
+    await upload_video(final_file)
 
-    # Get the URL of the latest video
-    video_url = await page.get_attribute('a#thumbnail', 'href')
+async def upload_video(final_file):
+    async with sync_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        await page.goto("https://www.youtube.com/upload")
+        await page.wait_for_selector("#start-upload #file-upload-button")
+        file_input = await page.query_selector("#start-upload #file-upload-button")
+        await file_input.set_input_files(final_file)
+        await page.wait_for_selector("#start-upload #next-button")
+        await page.click("#start-upload #next-button")
+        await page.wait_for_selector("#video-properties #title")
+        await page.fill("#video-properties #title", "Daily video upload")
+        await page.click("#video-properties #privacy-button")
+        await page.click("#video-properties #privacy-menu .ytp-menuitem:nth-child(1)")
+        await page.wait_for_selector("#video-properties #publish-button")
+        await page.click("#video-properties #publish-button")
+        await page.wait_for_selector("#upload-progress #text")
+        print("Video uploaded successfully.")
 
-    # Download the video
-    await page.goto(video_url)
-    await page.wait_for_selector('.ytp-large-play-button')
-    await page.click('.ytp-large-play-button')
-    time.sleep(10)  # Wait for the video to start playing
-    await page.keyboard.press('f')  # Switch to fullscreen
-    time.sleep(10)  # Wait for the video to play in fullscreen
-    await page.keyboard.press('d')  # Download the video
-    time.sleep(10)  # Wait for the download to finish
+if __name__ == "__main__":
+    # Set environment variables for Gmail and password
+    os.environ["GMAIL_USERNAME"] = "chatgpt8k@gmail.com"
+    os.environ["GMAIL_PASSWORD"] = "tJ19dQzWWH4THIWb"
 
-    # Rename the downloaded video to 'final.mp4'
-    os.rename('video.mp4', 'final.mp4')
-
-    # Upload the video to YouTube
-    await page.goto('https://studio.youtube.com')
-    await page.wait_for_selector('#upload-button')
-    await page.click('#upload-button')
-    await page.wait_for_selector('input[type=file]')
-    await page.set_input_files('input[type=file]', 'final.mp4')
-    await page.wait_for_selector('#next-button')
-    await page.click('#next-button')
-    await page.wait_for_selector('#title')
-    await page.fill('#title', 'My video title')
-    await page.wait_for_selector('#next-button')
-    await page.click('#next-button')
-    await page.wait_for_selector('#done-button')
-    await page.click('#done-button')
-
-    # Close the browser
-    await browser.close()
-
-if __name__ == '__main__':
-    with sync_playwright() as playwright:
-        playwright.run(main)
+    # Call the function to download and upload video
+    download_video()
