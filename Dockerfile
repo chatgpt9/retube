@@ -1,27 +1,15 @@
-FROM python:3.9-slim-buster
+FROM mcr.microsoft.com/playwright:v1.23.0-focal
 
-RUN apt-get update \
-    && apt-get install -y \
-        wget \
-        gnupg \
-        unzip \
-        fonts-noto-color-emoji \
-    && wget -qO - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y \
-        google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt update
+RUN apt install ffmpeg libsm6 libxext6  -y
+RUN apt install python3-pip -y
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
+RUN mkdir /app
+ADD . /app
 WORKDIR /app
 
-RUN pip install selenium
+RUN pip install --upgrade pip
 RUN pip install playwright
 RUN playwright install
 
-COPY . .
-
-CMD ["python", "main.py"]
+CMD ["python3", "main.py"]
