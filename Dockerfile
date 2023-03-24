@@ -11,5 +11,6 @@ WORKDIR /app
 RUN pip install --upgrade pip
 RUN pip install playwright
 RUN playwright install
+RUN pip install selenium
 
 CMD ["python3", "main.py"]
