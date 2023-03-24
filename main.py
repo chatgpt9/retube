@@ -1,6 +1,6 @@
 import os
 import asyncio
-from playwright.sync_api import Playwright, sync_playwright
+from playwright.sync_api import PlaywrightFacade as Playwright, sync_playwright
 
 async def download_and_upload_video(page, video_index):
     # Navigate to the YouTube homepage
