@@ -9,7 +9,7 @@ ADD . /app
 WORKDIR /app
 
 RUN pip install --upgrade pip
-RUN pip install -U playwright
+RUN npm install -g playwright
 RUN playwright install
 
 CMD ["python3", "main.py"]
