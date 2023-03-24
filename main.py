@@ -42,16 +42,16 @@ async def download_and_upload_video(page, video_index):
     await browser.close()
 
 # Main function
-def main():
+async def main():
     # Set up Playwright
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page()
+    async with sync_playwright() as playwright:
+        browser = await playwright.chromium.launch(headless=True)
+        page = await browser.new_page()
 
         # Download and upload the video every hour
         while True:
-            download_and_upload_video(page, 0)
-            page.wait_for_timeout(3600000) # Wait for 1 hour before repeating
+            await download_and_upload_video(page, 0)
+            await page.wait_for_timeout(3600000) # Wait for 1 hour before repeating
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
