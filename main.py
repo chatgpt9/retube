@@ -1,62 +1,57 @@
 import os
 from playwright.sync_api import Playwright, sync_playwright
 
-# Set environment variables for Gmail and Youtube credentials
-gmail_username = os.getenv('GMAIL_USERNAME')
-gmail_password = os.getenv('GMAIL_PASSWORD')
-youtube_username = os.getenv('YOUTUBE_USERNAME')
-youtube_password = os.getenv('YOUTUBE_PASSWORD')
+async def download_and_upload_video(page, video_index):
+    # Navigate to the YouTube homepage
+    await page.goto('https://www.youtube.com')
 
-# Define function to download video from Youtube index page
-def download_video(page):
-    # Navigate to Youtube index page
-    page.goto('https://www.youtube.com')
-    # Find the first video link and click on it
-    video_link = page.locator('#thumbnail').first()
-    video_link.click()
-    # Wait for video to load and click on download button
-    page.wait_for_selector('#buttons .ytp-download-button')
-    download_button = page.locator('#buttons .ytp-download-button')
-    download_button.click()
-    # Wait for download to finish and return the downloaded file path
-    page.wait_for_download()
-    return page.context().downloads_folder().get_downloaded_file_path()
+    # Click on the video at the specified index
+    video_links = await page.query_selector_all('a#video-title')
+    await video_links[video_index].click()
 
-# Define function to upload video to Youtube
-def upload_video(page, video_path):
-    # Navigate to Youtube upload page
-    page.goto('https://www.youtube.com/upload')
-    # Fill in Youtube login credentials and submit
-    page.fill('#identifierId', youtube_username)
-    page.click('#identifierNext')
-    page.fill('#password input', youtube_password)
-    page.click('#passwordNext')
-    # Wait for upload page to load and select file to upload
-    page.wait_for_selector('#upload-prompt-box input[type="file"]')
-    upload_input = page.locator('#upload-prompt-box input[type="file"]')
-    upload_input.set_input_files(video_path)
-    # Wait for video to upload and fill in title and description
-    page.wait_for_selector('#textbox')
-    page.fill('#textbox', 'My uploaded video')
-    page.fill('#description', 'This is my first uploaded video')
-    # Click on publish button
-    page.click('#publish-button')
+    # Wait for the video player to load and then click on the download button
+    await page.wait_for_selector('button.ytp-download-button')
+    await page.click('button.ytp-download-button')
 
-# Run the script
-with sync_playwright() as playwright:
-    # Set up browser and page context
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
-    # Log in to Gmail
-    page.goto('https://www.gmail.com')
-    page.fill('#identifierId', gmail_username)
-    page.click('#identifierNext')
-    page.fill('#password input', gmail_password)
-    page.click('#passwordNext')
-    # Download video and upload it to Youtube
-    video_path = download_video(page)
-    upload_video(page, video_path)
-    # Clean up resources
-    context.close()
-    browser.close()
+    # Wait for the download to finish and then get the file path
+    download_path = await page.wait_for_download()
+
+    # Rename the downloaded file to final.mp4
+    os.rename(download_path, 'final.mp4')
+
+    # Navigate to the YouTube upload page
+    await page.goto('https://www.youtube.com/upload')
+
+    # Upload the video file
+    await page.set_input_files('input[type="file"]', 'final.mp4')
+    await page.wait_for_selector('button#upload-prompt-box-upload-button')
+    await page.click('button#upload-prompt-box-upload-button')
+
+    # Fill in the video title and description
+    await page.fill('input#textbox', 'My Video Title')
+    await page.fill('textarea#textarea', 'My Video Description')
+
+    # Sign in to your Google account
+    await page.fill('input#identifierId', os.environ['GMAIL_USERNAME'])
+    await page.click('button#identifierNext')
+    await page.fill('input[name="password"]', os.environ['GMAIL_PASSWORD'])
+    await page.click('button#passwordNext')
+
+    # Wait for the video to finish uploading and then close the browser
+    await page.wait_for_selector('ytcp-video-upload-progress')
+    await browser.close()
+
+# Main function
+def main():
+    # Set up Playwright
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Download and upload the video every hour
+        while True:
+            download_and_upload_video(page, 0)
+            page.wait_for_timeout(3600000) # Wait for 1 hour before repeating
+
+if __name__ == '__main__':
+    main()
